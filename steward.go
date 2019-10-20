@@ -39,7 +39,7 @@ func New(configuration *configuration.Configuration) *Steward {
 			onDeviceUnregistered:    make(chan *model.Device, 10),
 			onDeviceIncomingMessage: make(chan *model.DeviceIncomingMessage, 100),
 		},
-		db: db.New("db.json"),
+		db: db.New(configuration.DeviceDatabase),
 	}
 	steward.functions = functions.New(coordinator, zcl)
 	return steward

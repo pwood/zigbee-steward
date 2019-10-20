@@ -13,6 +13,7 @@ type Configuration struct {
 	Channels    []uint8
 	Led         bool
 	Serial      *Serial
+	DeviceDatabase string
 }
 
 func Default() *Configuration {
@@ -27,5 +28,6 @@ func Default() *Configuration {
 			PortName: "/dev/tty.usbmodem14101",
 			BaudRate: 115200,
 		},
+		DeviceDatabase: "db.json",
 	}
 }
