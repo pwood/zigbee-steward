@@ -41,6 +41,7 @@ type Coordinator struct {
 	messageChannels  *MessageChannels
 	network          *Network
 	broadcast        *topic.Topic
+	ieeeAddress		 string
 }
 
 func (c *Coordinator) OnIncomingMessage() chan *znp.AfIncomingMessage {
@@ -65,6 +66,10 @@ func (c *Coordinator) OnError() chan error {
 
 func (c *Coordinator) Network() *Network {
 	return c.network
+}
+
+func (c *Coordinator) GetIEEEAddress() string {
+	return c.ieeeAddress
 }
 
 func New(config *configuration.Configuration) *Coordinator {
@@ -101,7 +106,7 @@ func (c *Coordinator) Start() error {
 	registerEndpoints(c)
 	permitJoin(c)
 	c.started = true
-	log.Info("Coordinator started")
+	log.Infof("Coordinator started, IEEE Address: %s", c.ieeeAddress)
 	return nil
 }
 
@@ -431,8 +436,21 @@ func configure(coordinator *Coordinator) {
 		_, err := np.SapiZbWriteConfiguration(0x64, []uint8{1})
 		return err
 	})
+
+	if coordinator.config.IEEEAddress != "0xffffffffffffffff" {
+		mandatorySetting(func() error {
+			_, err := np.SysSetExtAddr(coordinator.config.IEEEAddress)
+			return err
+		})
+	}
+
 	mandatorySetting(func() error {
-		_, err := np.SysSetExtAddr(coordinator.config.IEEEAddress)
+		ieeeGetResponse, err := np.SysGetExtAddr()
+
+		if err == nil {
+			coordinator.ieeeAddress = ieeeGetResponse.ExtAddress
+		}
+
 		return err
 	})
 
