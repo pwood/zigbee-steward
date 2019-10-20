@@ -17,7 +17,7 @@ var log = logger.MustGetLogger("db")
 type DeviceStore map[string]*model.Device
 
 type dataStore struct {
-	Devices *DeviceStore
+	Devices DeviceStore
 }
 
 type Db struct {
@@ -37,7 +37,7 @@ func New(filename string) *Db {
 	}
 	newDb := &Db{
 		ds: &dataStore{
-			Devices: &DeviceStore{},
+			Devices: map[string]*model.Device{},
 		},
 		location: dbPath,
 		rw:       &sync.RWMutex{},
@@ -89,21 +89,21 @@ func (db *Db) Devices() Devices {
 
 func (devices Devices) Add(device *model.Device) {
 	devices.db.update(func() {
-		(*devices.db.ds.Devices)[device.IEEEAddress] = device
+		devices.db.ds.Devices[device.IEEEAddress] = device
 	})
 }
 
 func (devices Devices) Get(ieeeAddress string) (*model.Device, bool) {
 	devices.db.rw.RLock()
 	defer devices.db.rw.RUnlock()
-	device, ok := (*devices.db.ds.Devices)[ieeeAddress]
+	device, ok := devices.db.ds.Devices[ieeeAddress]
 	return device, ok
 }
 
 func (devices Devices) GetByNetworkAddress(networkAddress string) (*model.Device, bool) {
 	devices.db.rw.RLock()
 	defer devices.db.rw.RUnlock()
-	for _, d := range *devices.db.ds.Devices {
+	for _, d := range devices.db.ds.Devices {
 		if d.NetworkAddress == networkAddress {
 			return d, true
 		}
@@ -113,13 +113,13 @@ func (devices Devices) GetByNetworkAddress(networkAddress string) (*model.Device
 
 func (devices Devices) Remove(ieeeAddress string) {
 	devices.db.update(func() {
-		delete(*devices.db.ds.Devices, ieeeAddress)
+		delete(devices.db.ds.Devices, ieeeAddress)
 	})
 }
 
 func (devices Devices) Exists(ieeeAddress string) bool {
 	devices.db.rw.RLock()
 	defer devices.db.rw.RUnlock()
-	_, ok := (*devices.db.ds.Devices)[ieeeAddress]
+	_, ok := devices.db.ds.Devices[ieeeAddress]
 	return ok
 }
