@@ -11,3 +11,5 @@ require (
 	github.com/tv42/topic v0.0.0-20130729201830-aa72cbe81b48
 	go.bug.st/serial.v1 v0.0.0-20180827123349-5f7892a7bb45
 )
+
+go 1.13

@@ -22,6 +22,7 @@ type Steward struct {
 	zcl               *zcl.Zcl
 	channels          *Channels
 	functions         *functions.Functions
+	db                *db.Db
 }
 
 func New(configuration *configuration.Configuration) *Steward {
@@ -93,10 +94,10 @@ func (s *Steward) enableRegistrationQueue() {
 func (s *Steward) registerDevice(announcedDevice *znp.ZdoEndDeviceAnnceInd) {
 	ieeeAddress := announcedDevice.IEEEAddr
 	log.Infof("Registering device [%s]", ieeeAddress)
-	if device, ok := db.Database().Tables().Devices.Get(ieeeAddress); ok {
+	if device, ok := s.db.Devices().Get(ieeeAddress); ok {
 		log.Debugf("Device [%s] already exists in DB. Updating network address", ieeeAddress)
 		device.NetworkAddress = announcedDevice.NwkAddr
-		db.Database().Tables().Devices.Add(device)
+		s.db.Devices().Add(device)
 		select {
 		case s.channels.onDeviceBecameAvailable <- device:
 		default:
@@ -156,7 +157,7 @@ func (s *Steward) registerDevice(announcedDevice *znp.ZdoEndDeviceAnnceInd) {
 		device.Endpoints = append(device.Endpoints, endpoint)
 	}
 
-	db.Database().Tables().Devices.Add(device)
+	s.db.Devices().Add(device)
 	select {
 	case s.channels.onDeviceRegistered <- device:
 	default:
@@ -196,7 +197,7 @@ func (s *Steward) processIncomingMessage(incomingMessage *znp.AfIncomingMessage)
 	zclIncomingMessage, err := s.zcl.ToZclIncomingMessage(incomingMessage)
 	if err == nil {
 		log.Debugf("Foundation Frame Payload\n%s\n", func() string { return spew.Sdump(zclIncomingMessage) })
-		if device, ok := db.Database().Tables().Devices.GetByNetworkAddress(incomingMessage.SrcAddr); ok {
+		if device, ok := s.db.Devices().GetByNetworkAddress(incomingMessage.SrcAddr); ok {
 			deviceIncomingMessage := &model.DeviceIncomingMessage{
 				Device:          device,
 				IncomingMessage: zclIncomingMessage,
@@ -216,9 +217,9 @@ func (s *Steward) processIncomingMessage(incomingMessage *znp.AfIncomingMessage)
 
 func (s *Steward) unregisterDevice(deviceLeave *znp.ZdoLeaveInd) {
 	ieeeAddress := deviceLeave.ExtAddr
-	if device, ok := db.Database().Tables().Devices.Get(ieeeAddress); ok {
+	if device, ok := s.db.Devices().Get(ieeeAddress); ok {
 		log.Infof("Unregistering device: [%s]", ieeeAddress)
-		db.Database().Tables().Devices.Remove(ieeeAddress)
+		s.db.Devices().Remove(ieeeAddress)
 		select {
 		case s.channels.onDeviceUnregistered <- device:
 		default:
