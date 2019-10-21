@@ -21,7 +21,8 @@ func New(coordinator *coordinator.Coordinator, zcl *zcl.Zcl) *Functions {
 				coordinator: coordinator,
 				zcl:         zcl,
 			},
-			local: NewLocalClusterFunctions(coordinator, zcl),
+			local:      NewLocalClusterFunctions(coordinator, zcl),
+			localSmart: NewLocalSmartClusterFunctions(coordinator, zcl),
 		},
 	}
 }
