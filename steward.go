@@ -70,6 +70,10 @@ func (s *Steward) Configuration() *configuration.Configuration {
 	return s.configuration
 }
 
+func (s *Steward) GetCoordinatorIEEEAddress() string  {
+	return s.coordinator.GetIEEEAddress()
+}
+
 func (s *Steward) enableListeners() {
 	for {
 		select {
